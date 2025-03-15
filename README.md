@@ -1,4 +1,4 @@
-# AT4DX Enterprise Example
+# AT4DX Enterprise Multi-Domain Example
 
 This project demonstrates a sophisticated enterprise implementation of Salesforce development using the [AT4DX framework](https://github.com/apex-enterprise-patterns/at4dx). It showcases how to build a modular, loosely-coupled architecture across multiple business domains using unlocked packages.
 
@@ -6,15 +6,11 @@ This project demonstrates a sophisticated enterprise implementation of Salesforc
 
 The implementation spans multiple business domains, each implemented as a separate 2nd generation package:
 
-1. **Shared Services** - Core utilities and cross-cutting concerns
-2. **Account Management** - Customer master data and account relationships
-3. **Product Management** - Product catalog and product master data
-4. **Marketing** - Campaign management and customer segmentation
-5. **Sales** - Opportunity management and sales processes
-6. **Service** - Case management and customer support
-7. **Operations** - Order fulfillment and supply chain
-8. **Finance** - Billing, invoicing, and financial operations
-9. **Legal** - Contract management and compliance
+1. **Shared Services** (`AT4DX-SharedServices`) - Core utilities and cross-cutting concerns
+2. **Account Management** (`AT4DX-AccountManagement`) - Customer master data and account relationships
+3. **Product Management** (`AT4DX-ProductManagement`) - Product catalog and product master data
+4. **Marketing** (`AT4DX-Marketing`) - Campaign management and customer segmentation
+5. **Sales** (`AT4DX-Sales`) - Opportunity management and sales processes
 
 Plus a "happy soup" directory for components that can't be packaged or span multiple packages.
 
@@ -66,21 +62,17 @@ This pattern provides a consistent approach to object creation while enabling su
 ## Package Dependencies
 
 ```
-SharedServices
+AT4DX-SharedServices
     ↑
-    ├── AccountManagement
+    ├── AT4DX-AccountManagement
     │       ↑
-    │       ├── Marketing
-    │       ├── Legal
+    │       ├── AT4DX-Marketing
     │       │
-    │       └── Sales ← Finance
-    │             ↑
-    │             └── Operations
+    │       └── AT4DX-Sales ←
     │
-    └── ProductManagement
+    └── AT4DX-ProductManagement
             ↑
-            ├── Sales
-            └── Service
+            └── AT4DX-Sales
 ```
 
 ## Setup Instructions
@@ -97,8 +89,8 @@ SharedServices
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/at4dx-enterprise-example.git
-   cd at4dx-enterprise-example
+   git clone https://github.com/yourusername/at4dx-enterprise-multi-domain-example.git
+   cd at4dx-enterprise-multi-domain-example
    ```
 
 2. Authorize your DevHub:
@@ -114,68 +106,58 @@ SharedServices
 4. Install prerequisites:
    ```bash
    # Install fflib-apex-common
-   sf project deploy start -d deps/fflib-apex-common
+   sf project deploy start -d deps/fflib-apex-common -o scratch-org
    
    # Install fflib-apex-mocks
-   sf project deploy start -d deps/fflib-apex-mocks
+   sf project deploy start -d deps/fflib-apex-mocks -o scratch-org
    
    # Install force-di
-   sf project deploy start -d deps/force-di
+   sf project deploy start -d deps/force-di -o scratch-org
    
    # Install AT4DX core
-   sf project deploy start -d deps/at4dx
+   sf project deploy start -d deps/at4dx -o scratch-org
    ```
 
-5. Deploy the packages in dependency order:
+5. Deploy the packages in dependency order using the deployment script:
    ```bash
-   # Deploy Shared Services
-   sf project deploy start -d shared-services
-   
-   # Deploy Account Management
-   sf project deploy start -d account-management
-   
-   # Deploy Product Management
-   sf project deploy start -d product-management
-   
-   # Deploy Marketing
-   sf project deploy start -d marketing
-   
-   # Deploy Sales
-   sf project deploy start -d sales
-   
-   # Deploy Service
-   sf project deploy start -d service
-   
-   # Deploy Operations
-   sf project deploy start -d operations
-   
-   # Deploy Finance
-   sf project deploy start -d finance
-   
-   # Deploy Legal
-   sf project deploy start -d legal
-   
-   # Deploy happy soup components
-   sf project deploy start -d happysoup
+   ./scripts/deploy-packages.sh --all
    ```
+
+### Creating Package Versions
+
+To create versioned packages for distribution:
+
+```bash
+# Create shared-services package version
+sf package version create -p "AT4DX-SharedServices" -w 60 -v DevHub --skip-validation
+
+# Create account-management package version
+sf package version create -p "AT4DX-AccountManagement" -w 60 -v DevHub --skip-validation
+
+# Create product-management package version
+sf package version create -p "AT4DX-ProductManagement" -w 60 -v DevHub --skip-validation
+
+# Create marketing package version
+sf package version create -p "AT4DX-Marketing" -w 60 -v DevHub --skip-validation
+
+# Create sales package version
+sf package version create -p "AT4DX-Sales" -w 60 -v DevHub --skip-validation
+```
 
 ## Project Structure
 
 ```
-at4dx-enterprise-example/
+at4dx-enterprise-multi-domain-example/
 ├── shared-services/               # Core utilities and cross-cutting concerns
 ├── account-management/            # Account domain implementation
 ├── product-management/            # Product domain implementation
 ├── marketing/                     # Marketing extension package
 ├── sales/                         # Sales package
-├── service/                       # Service package
-├── operations/                    # Operations package
-├── finance/                       # Finance package
-├── legal/                         # Legal package
-├── happysoup/                     # Non-packageable components
+├── happy-soup/                    # Non-packageable components
 ├── deps/                          # Dependencies
 ├── scripts/                       # Deployment scripts
-└── config/                        # Configuration files
+├── config/                        # Configuration files
+└── .github/                       # GitHub Actions workflows
 ```
 
 ## Development Guidelines
@@ -195,6 +177,14 @@ at4dx-enterprise-example/
 3. Use platform events for communication where possible
 4. Update consuming packages to handle any changes
 5. Deploy packages in dependency order
+
+## CI/CD Integration
+
+This project includes GitHub Actions workflows for continuous integration:
+
+- **Automated deployment**: Changes to package directories trigger deployment of those packages and their dependencies
+- **Package creation**: Changes to the main branch trigger creation of new package versions
+- **Automated testing**: Tests are run automatically after deployment
 
 ## Conclusion
 

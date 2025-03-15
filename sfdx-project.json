@@ -2,166 +2,108 @@
   "packageDirectories": [
     {
       "path": "shared-services",
-      "package": "SharedServices",
-      "versionName": "Version 1.0",
-      "versionNumber": "1.0.0.NEXT",
-      "default": false
-    },
-    {
-      "path": "account-management",
-      "package": "AccountManagement",
+      "package": "AT4DX-SharedServices",
       "versionName": "Version 1.0",
       "versionNumber": "1.0.0.NEXT",
       "default": false,
+      "packageType": "Unlocked",
+      "definitionFile": "config/project-scratch-def.json"
+    },
+    {
+      "path": "account-management",
+      "package": "AT4DX-AccountManagement",
+      "versionName": "Version 1.0",
+      "versionNumber": "1.0.0.NEXT",
+      "default": false,
+      "packageType": "Unlocked",
+      "definitionFile": "config/project-scratch-def.json",
       "dependencies": [
         {
-          "package": "SharedServices",
+          "package": "AT4DX-SharedServices",
           "versionNumber": "1.0.0.LATEST"
         }
       ]
     },
     {
       "path": "product-management",
-      "package": "ProductManagement",
+      "package": "AT4DX-ProductManagement",
       "versionName": "Version 1.0",
       "versionNumber": "1.0.0.NEXT",
       "default": false,
+      "packageType": "Unlocked",
+      "definitionFile": "config/project-scratch-def.json",
       "dependencies": [
         {
-          "package": "SharedServices",
+          "package": "AT4DX-SharedServices",
           "versionNumber": "1.0.0.LATEST"
         }
       ]
     },
     {
       "path": "marketing",
-      "package": "Marketing",
+      "package": "AT4DX-Marketing",
       "versionName": "Version 1.0",
       "versionNumber": "1.0.0.NEXT",
       "default": false,
+      "packageType": "Unlocked",
+      "definitionFile": "config/project-scratch-def.json",
       "dependencies": [
         {
-          "package": "SharedServices",
+          "package": "AT4DX-SharedServices",
           "versionNumber": "1.0.0.LATEST"
         },
         {
-          "package": "AccountManagement",
+          "package": "AT4DX-AccountManagement",
           "versionNumber": "1.0.0.LATEST"
         }
       ]
     },
     {
       "path": "sales",
-      "package": "Sales",
+      "package": "AT4DX-Sales",
       "versionName": "Version 1.0",
       "versionNumber": "1.0.0.NEXT",
       "default": false,
+      "packageType": "Unlocked",
+      "definitionFile": "config/project-scratch-def.json",
       "dependencies": [
         {
-          "package": "SharedServices",
+          "package": "AT4DX-SharedServices",
           "versionNumber": "1.0.0.LATEST"
         },
         {
-          "package": "AccountManagement",
+          "package": "AT4DX-AccountManagement",
           "versionNumber": "1.0.0.LATEST"
         },
         {
-          "package": "ProductManagement",
+          "package": "AT4DX-ProductManagement",
           "versionNumber": "1.0.0.LATEST"
         }
       ]
     },
     {
-      "path": "service",
-      "package": "Service",
-      "versionName": "Version 1.0",
-      "versionNumber": "1.0.0.NEXT",
-      "default": false,
-      "dependencies": [
-        {
-          "package": "SharedServices",
-          "versionNumber": "1.0.0.LATEST"
-        },
-        {
-          "package": "AccountManagement",
-          "versionNumber": "1.0.0.LATEST"
-        },
-        {
-          "package": "ProductManagement",
-          "versionNumber": "1.0.0.LATEST"
-        }
-      ]
-    },
-    {
-      "path": "operations",
-      "package": "Operations",
-      "versionName": "Version 1.0",
-      "versionNumber": "1.0.0.NEXT",
-      "default": false,
-      "dependencies": [
-        {
-          "package": "SharedServices",
-          "versionNumber": "1.0.0.LATEST"
-        },
-        {
-          "package": "AccountManagement",
-          "versionNumber": "1.0.0.LATEST"
-        },
-        {
-          "package": "ProductManagement",
-          "versionNumber": "1.0.0.LATEST"
-        },
-        {
-          "package": "Sales",
-          "versionNumber": "1.0.0.LATEST"
-        }
-      ]
-    },
-    {
-      "path": "finance",
-      "package": "Finance",
-      "versionName": "Version 1.0",
-      "versionNumber": "1.0.0.NEXT",
-      "default": false,
-      "dependencies": [
-        {
-          "package": "SharedServices",
-          "versionNumber": "1.0.0.LATEST"
-        },
-        {
-          "package": "AccountManagement",
-          "versionNumber": "1.0.0.LATEST"
-        },
-        {
-          "package": "Sales",
-          "versionNumber": "1.0.0.LATEST"
-        }
-      ]
-    },
-    {
-      "path": "legal",
-      "package": "Legal",
-      "versionName": "Version 1.0",
-      "versionNumber": "1.0.0.NEXT",
-      "default": false,
-      "dependencies": [
-        {
-          "package": "SharedServices",
-          "versionNumber": "1.0.0.LATEST"
-        },
-        {
-          "package": "AccountManagement",
-          "versionNumber": "1.0.0.LATEST"
-        }
-      ]
-    },
-    {
-      "path": "happysoup",
+      "path": "happy-soup",
       "default": true
     }
   ],
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
   "sourceApiVersion": "59.0",
-  "packageAliases": {}
+  "packageAliases": {},
+  "plugins": {
+    "dependencies": [
+      {
+        "name": "ffl-apex-common",
+        "version": "^2.0.0"
+      },
+      {
+        "name": "ffl-apex-mocks",
+        "version": "^2.0.0"
+      },
+      {
+        "name": "force-di",
+        "version": "^2.0.0"
+      }
+    ]
+  }
 }

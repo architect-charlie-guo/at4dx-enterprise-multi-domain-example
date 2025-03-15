@@ -25,7 +25,7 @@ These components should always be deployed **after** all other packages:
 ./scripts/deploy-packages.sh --all
 
 # Then deploy the happy soup components
-sf project deploy start -d happysoup
+sf project deploy start -d happy-soup
 ```
 
 ## Best Practices

@@ -1,0 +1,222 @@
+name: Deploy and Test AT4DX Enterprise Example
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to deploy (leave empty to deploy all)'
+        required: false
+        default: ''
+
+jobs:
+  determine-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed_packages: ${{ steps.check-changes.outputs.changed_packages }}
+      all_packages: ${{ steps.check-changes.outputs.all_packages }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Determine changed packages
+        id: check-changes
+        run: |
+          # Default packages to deploy in dependency order
+          BASE_PACKAGES="shared-services account-management product-management marketing sales happy-soup"
+          
+          # If workflow was manually triggered with a specific package
+          if [ -n "${{ github.event.inputs.package }}" ]; then
+            echo "changed_packages=${{ github.event.inputs.package }}" >> $GITHUB_OUTPUT
+            echo "all_packages=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # For pull requests and pushes, detect what has changed
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before || 'HEAD~1' }} ${{ github.event.after || 'HEAD' }})
+          
+          CHANGED_PACKAGES=""
+          
+          # Check each package directory for changes
+          for pkg in $BASE_PACKAGES; do
+            if echo "$CHANGED_FILES" | grep -q "^$pkg/"; then
+              CHANGED_PACKAGES="$CHANGED_PACKAGES $pkg"
+            fi
+          done
+          
+          # If workflow files changed, deploy everything
+          if echo "$CHANGED_FILES" | grep -q "^\.github/workflows/" || echo "$CHANGED_FILES" | grep -q "^scripts/"; then
+            echo "all_packages=true" >> $GITHUB_OUTPUT
+            echo "changed_packages=$BASE_PACKAGES" >> $GITHUB_OUTPUT
+          elif [ -z "$CHANGED_PACKAGES" ]; then
+            # If no packages changed, deploy everything as a safety measure
+            echo "all_packages=true" >> $GITHUB_OUTPUT
+            echo "changed_packages=$BASE_PACKAGES" >> $GITHUB_OUTPUT
+          else
+            echo "all_packages=false" >> $GITHUB_OUTPUT
+            echo "changed_packages=$CHANGED_PACKAGES" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "Packages to deploy: $CHANGED_PACKAGES"
+
+  deploy-and-test:
+    needs: determine-changes
+    runs-on: ubuntu-latest
+    if: ${{ needs.determine-changes.outputs.changed_packages != '' }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Salesforce CLI
+        uses: salesforcecli/cli-setup-action@v1
+        with:
+          version: 2.22.7
+
+      - name: Authorize DevHub
+        env:
+          SFDX_AUTH_URL: ${{ secrets.DEVHUB_SFDX_AUTH_URL }}
+        run: |
+          echo "$SFDX_AUTH_URL" > ./authfile
+          sf org login sfdx-url -f ./authfile -a DevHub
+          rm -f ./authfile
+
+      - name: Create Scratch Org
+        run: |
+          sf org create scratch -f config/project-scratch-def.json -a scratch-org -d -y 1
+
+      - name: Install Dependencies
+        run: |
+          echo "Installing fflib-apex-common..."
+          sf project deploy start -d deps/fflib-apex-common -o scratch-org
+          
+          echo "Installing fflib-apex-mocks..."
+          sf project deploy start -d deps/fflib-apex-mocks -o scratch-org
+          
+          echo "Installing force-di..."
+          sf project deploy start -d deps/force-di -o scratch-org
+          
+          echo "Installing AT4DX core..."
+          sf project deploy start -d deps/at4dx -o scratch-org
+
+      - name: Deploy Packages
+        if: ${{ needs.determine-changes.outputs.all_packages == 'true' }}
+        run: |
+          # Deploy in dependency order
+          echo "Deploying shared-services..."
+          sf project deploy start -d shared-services -o scratch-org
+          
+          echo "Deploying account-management..."
+          sf project deploy start -d account-management -o scratch-org
+          
+          echo "Deploying product-management..."
+          sf project deploy start -d product-management -o scratch-org
+          
+          echo "Deploying marketing..."
+          sf project deploy start -d marketing -o scratch-org
+          
+          echo "Deploying sales..."
+          sf project deploy start -d sales -o scratch-org
+          
+          echo "Deploying happy-soup..."
+          sf project deploy start -d happy-soup -o scratch-org
+
+      - name: Deploy Changed Packages
+        if: ${{ needs.determine-changes.outputs.all_packages == 'false' }}
+        run: |
+          # Read the changed packages
+          CHANGED_PACKAGES="${{ needs.determine-changes.outputs.changed_packages }}"
+          
+          # Create a file with the needed deploy script
+          cat > deploy_changed.sh << 'EOL'
+          #!/bin/bash
+          set -e
+          
+          # Define dependencies
+          function deploy_with_deps() {
+            case $1 in
+              marketing)
+                sf project deploy start -d shared-services -o scratch-org
+                sf project deploy start -d account-management -o scratch-org
+                sf project deploy start -d $1 -o scratch-org
+                ;;
+              sales)
+                sf project deploy start -d shared-services -o scratch-org
+                sf project deploy start -d account-management -o scratch-org
+                sf project deploy start -d product-management -o scratch-org
+                sf project deploy start -d $1 -o scratch-org
+                ;;
+              account-management)
+                sf project deploy start -d shared-services -o scratch-org
+                sf project deploy start -d $1 -o scratch-org
+                ;;
+              product-management)
+                sf project deploy start -d shared-services -o scratch-org
+                sf project deploy start -d $1 -o scratch-org
+                ;;
+              shared-services)
+                sf project deploy start -d $1 -o scratch-org
+                ;;
+              happy-soup)
+                # Deploy all packages before happy-soup
+                sf project deploy start -d shared-services -o scratch-org
+                sf project deploy start -d account-management -o scratch-org
+                sf project deploy start -d product-management -o scratch-org
+                sf project deploy start -d marketing -o scratch-org
+                sf project deploy start -d sales -o scratch-org
+                sf project deploy start -d $1 -o scratch-org
+                ;;
+            esac
+          }
+          
+          # Deploy each changed package with its dependencies
+          for pkg in $@; do
+            echo "Deploying $pkg with dependencies..."
+            deploy_with_deps $pkg
+          done
+          EOL
+          
+          # Make script executable
+          chmod +x deploy_changed.sh
+          
+          # Run the script with all changed packages
+          ./deploy_changed.sh $CHANGED_PACKAGES
+
+      - name: Create Package Versions
+        if: ${{ github.ref == 'refs/heads/main' }} # Only create packages on main branch
+        run: |
+          echo "Creating package versions..."
+          
+          echo "Creating shared-services package version..."
+          sf package version create -p "AT4DX-SharedServices" -w 60 -v DevHub --skip-validation
+          
+          echo "Creating account-management package version..."
+          sf package version create -p "AT4DX-AccountManagement" -w 60 -v DevHub --skip-validation
+          
+          echo "Creating product-management package version..."
+          sf package version create -p "AT4DX-ProductManagement" -w 60 -v DevHub --skip-validation
+          
+          echo "Creating marketing package version..."
+          sf package version create -p "AT4DX-Marketing" -w 60 -v DevHub --skip-validation
+          
+          echo "Creating sales package version..."
+          sf package version create -p "AT4DX-Sales" -w 60 -v DevHub --skip-validation
+
+      - name: Run Tests
+        run: |
+          echo "Running Apex tests..."
+          sf apex run test -o scratch-org --result-format human
+          
+          echo "Retrieving test results..."
+          sf apex get test -o scratch-org --result-format human
+
+      - name: Clean up
+        if: always()
+        run: |
+          echo "Deleting scratch org..."
+          sf org delete scratch -p -o scratch-org

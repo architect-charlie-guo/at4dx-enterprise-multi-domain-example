@@ -27,11 +27,7 @@ function print_usage {
   echo "  product-management        Product domain implementation"
   echo "  marketing                 Marketing extension package"
   echo "  sales                     Sales package"
-  echo "  service                   Service package"
-  echo "  operations                Operations package"
-  echo "  finance                   Finance package"
-  echo "  legal                     Legal package"
-  echo "  happysoup                 Non-packageable components"
+  echo "  happy-soup                Non-packageable components"
   echo ""
   echo "When deploying a specific package, this script will automatically"
   echo "deploy its dependencies first."
@@ -67,43 +63,19 @@ function deploy_dependencies {
       deploy_package "account-management"
       deploy_package "product-management"
       ;;
-    service)
-      deploy_package "shared-services"
-      deploy_package "account-management"
-      deploy_package "product-management"
-      ;;
-    operations)
-      deploy_package "shared-services"
-      deploy_package "account-management"
-      deploy_package "product-management"
-      deploy_package "sales"
-      ;;
-    finance)
-      deploy_package "shared-services"
-      deploy_package "account-management"
-      deploy_package "sales"
-      ;;
-    legal)
-      deploy_package "shared-services"
-      deploy_package "account-management"
-      ;;
     account-management)
       deploy_package "shared-services"
       ;;
     product-management)
       deploy_package "shared-services"
       ;;
-    happysoup)
-      # Deploy all packages before deploying happysoup
+    happy-soup)
+      # Deploy all packages before happy-soup
       deploy_package "shared-services"
       deploy_package "account-management"
       deploy_package "product-management"
       deploy_package "marketing"
       deploy_package "sales"
-      deploy_package "service"
-      deploy_package "operations"
-      deploy_package "finance"
-      deploy_package "legal"
       ;;
   esac
 }
@@ -120,13 +92,9 @@ function deploy_all_packages {
   # Domain packages
   deploy_package "marketing"
   deploy_package "sales"
-  deploy_package "service"
-  deploy_package "operations"
-  deploy_package "finance"
-  deploy_package "legal"
   
   # Non-packageable components
-  deploy_package "happysoup"
+  deploy_package "happy-soup"
   
   echo "✅ All packages deployed successfully!"
 }
