@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Logs errors that occur in the system</description>
+    <label>Error Log</label>
+    <nameField>
+        <displayFormat>ERR-{0000}</displayFormat>
+        <label>Error Number</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Error Logs</pluralLabel>
+    <searchLayouts/>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

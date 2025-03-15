@@ -1,0 +1,34 @@
+{
+  "orgName": "AT4DX Enterprise Example",
+  "edition": "Enterprise",
+  "features": [
+    "EnableSetPasswordInApi",
+    "DebugApex",
+    "API",
+    "MultiCurrency",
+    "AuthorApex",
+    "PersonAccounts",
+    "ServiceCloud",
+    "Communities",
+    "PLATFORMCACHE"
+  ],
+  "settings": {
+    "lightningExperienceSettings": {
+      "enableS1DesktopEnabled": true
+    },
+    "mobileSettings": {
+      "enableS1EncryptedStoragePref2": false
+    },
+    "securitySettings": {
+      "passwordPolicies": {
+        "enableSetPasswordInApi": true
+      }
+    },
+    "communitiesSettings": {
+      "enableNetworksEnabled": true
+    },
+    "apexSettings": {
+      "enableApexApprovalLockUnlock": true
+    }
+  }
+}

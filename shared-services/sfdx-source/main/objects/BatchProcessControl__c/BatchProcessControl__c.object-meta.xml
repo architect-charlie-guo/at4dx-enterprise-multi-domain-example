@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Controls and configures batch processes across the organization</description>
+    <label>Batch Process Control</label>
+    <nameField>
+        <label>Process Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>Batch Process Controls</pluralLabel>
+    <searchLayouts/>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

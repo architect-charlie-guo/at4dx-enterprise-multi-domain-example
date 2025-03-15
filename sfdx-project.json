@@ -1,0 +1,167 @@
+{
+  "packageDirectories": [
+    {
+      "path": "shared-services",
+      "package": "SharedServices",
+      "versionName": "Version 1.0",
+      "versionNumber": "1.0.0.NEXT",
+      "default": false
+    },
+    {
+      "path": "account-management",
+      "package": "AccountManagement",
+      "versionName": "Version 1.0",
+      "versionNumber": "1.0.0.NEXT",
+      "default": false,
+      "dependencies": [
+        {
+          "package": "SharedServices",
+          "versionNumber": "1.0.0.LATEST"
+        }
+      ]
+    },
+    {
+      "path": "product-management",
+      "package": "ProductManagement",
+      "versionName": "Version 1.0",
+      "versionNumber": "1.0.0.NEXT",
+      "default": false,
+      "dependencies": [
+        {
+          "package": "SharedServices",
+          "versionNumber": "1.0.0.LATEST"
+        }
+      ]
+    },
+    {
+      "path": "marketing",
+      "package": "Marketing",
+      "versionName": "Version 1.0",
+      "versionNumber": "1.0.0.NEXT",
+      "default": false,
+      "dependencies": [
+        {
+          "package": "SharedServices",
+          "versionNumber": "1.0.0.LATEST"
+        },
+        {
+          "package": "AccountManagement",
+          "versionNumber": "1.0.0.LATEST"
+        }
+      ]
+    },
+    {
+      "path": "sales",
+      "package": "Sales",
+      "versionName": "Version 1.0",
+      "versionNumber": "1.0.0.NEXT",
+      "default": false,
+      "dependencies": [
+        {
+          "package": "SharedServices",
+          "versionNumber": "1.0.0.LATEST"
+        },
+        {
+          "package": "AccountManagement",
+          "versionNumber": "1.0.0.LATEST"
+        },
+        {
+          "package": "ProductManagement",
+          "versionNumber": "1.0.0.LATEST"
+        }
+      ]
+    },
+    {
+      "path": "service",
+      "package": "Service",
+      "versionName": "Version 1.0",
+      "versionNumber": "1.0.0.NEXT",
+      "default": false,
+      "dependencies": [
+        {
+          "package": "SharedServices",
+          "versionNumber": "1.0.0.LATEST"
+        },
+        {
+          "package": "AccountManagement",
+          "versionNumber": "1.0.0.LATEST"
+        },
+        {
+          "package": "ProductManagement",
+          "versionNumber": "1.0.0.LATEST"
+        }
+      ]
+    },
+    {
+      "path": "operations",
+      "package": "Operations",
+      "versionName": "Version 1.0",
+      "versionNumber": "1.0.0.NEXT",
+      "default": false,
+      "dependencies": [
+        {
+          "package": "SharedServices",
+          "versionNumber": "1.0.0.LATEST"
+        },
+        {
+          "package": "AccountManagement",
+          "versionNumber": "1.0.0.LATEST"
+        },
+        {
+          "package": "ProductManagement",
+          "versionNumber": "1.0.0.LATEST"
+        },
+        {
+          "package": "Sales",
+          "versionNumber": "1.0.0.LATEST"
+        }
+      ]
+    },
+    {
+      "path": "finance",
+      "package": "Finance",
+      "versionName": "Version 1.0",
+      "versionNumber": "1.0.0.NEXT",
+      "default": false,
+      "dependencies": [
+        {
+          "package": "SharedServices",
+          "versionNumber": "1.0.0.LATEST"
+        },
+        {
+          "package": "AccountManagement",
+          "versionNumber": "1.0.0.LATEST"
+        },
+        {
+          "package": "Sales",
+          "versionNumber": "1.0.0.LATEST"
+        }
+      ]
+    },
+    {
+      "path": "legal",
+      "package": "Legal",
+      "versionName": "Version 1.0",
+      "versionNumber": "1.0.0.NEXT",
+      "default": false,
+      "dependencies": [
+        {
+          "package": "SharedServices",
+          "versionNumber": "1.0.0.LATEST"
+        },
+        {
+          "package": "AccountManagement",
+          "versionNumber": "1.0.0.LATEST"
+        }
+      ]
+    },
+    {
+      "path": "happysoup",
+      "default": true
+    }
+  ],
+  "namespace": "",
+  "sfdcLoginUrl": "https://login.salesforce.com",
+  "sourceApiVersion": "59.0",
+  "packageAliases": {}
+}
