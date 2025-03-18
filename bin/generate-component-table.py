@@ -1,5 +1,8 @@
 """
-This script recursively scans a Salesforce source directory and compiles a Markdown table.
+This script recursively scans a Salesforce source directory and compiles Markdown tables:
+1. A detailed table of all components
+2. A summary table showing component types per module
+
 It includes all files found, classifying them by file extension if no Salesforce type is known.
 
 How it works:
@@ -10,7 +13,9 @@ How it works:
 - Uses Git (if available) to determine if a file is "Created" or "Changed". Unmodified files have an empty state.
 - Determines the module for each file based on the first subdirectory in its path.
 - Counts the number of lines in each file.
-- Compiles the collected information into a Markdown table with columns: State, Module, Type, Name, Line Count, and Path.
+- Compiles the collected information into two Markdown tables:
+  1. A detailed component table with columns: State, Module, Type, Name, Line Count, and Path
+  2. A summary table with component types as rows and modules as columns
 - Prints usage instructions if no directory argument is provided.
 """
 
@@ -18,6 +23,7 @@ import os
 import re
 import sys
 import subprocess
+from collections import defaultdict
 
 # Extended mapping of file extensions to Salesforce metadata types.
 # This dictionary maps common Salesforce file extensions to their corresponding metadata types.
@@ -223,6 +229,76 @@ def generate_markdown_table(file_data):
 
     return "\n".join(markdown_table)
 
+def generate_summary_table(file_data):
+    """
+    Generates a summary Markdown table that shows the number of each type of component
+    per module.
+    
+    Args:
+        file_data: List of tuples with file data (state, module, type, name, line_count, path)
+    
+    Returns:
+        str: A Markdown table with component types as rows and modules as columns.
+    """
+    # Count components by type and module
+    type_module_count = defaultdict(lambda: defaultdict(int))
+    
+    # Get all unique types and modules
+    all_types = set()
+    all_modules = set()
+    
+    for _, module, type_name, _, _, _ in file_data:
+        if type_name:  # Skip empty types
+            type_module_count[type_name][module] += 1
+            all_types.add(type_name)
+            all_modules.add(module)
+    
+    # Sort types and modules for consistent table
+    sorted_types = sorted(all_types)
+    sorted_modules = sorted(all_modules)
+    
+    # Generate the table
+    markdown_table = []
+    
+    # Header row with module names
+    header = "| Component Type |"
+    for module in sorted_modules:
+        header += f" {module} |"
+    markdown_table.append(header)
+    
+    # Separator row
+    separator = "|----------------|"
+    for _ in sorted_modules:
+        separator += "---------|"
+    markdown_table.append(separator)
+    
+    # Data rows for each component type
+    for type_name in sorted_types:
+        row = f"| {type_name} |"
+        for module in sorted_modules:
+            count = type_module_count[type_name][module]
+            row += f" {count} |" if count > 0 else " - |"
+        markdown_table.append(row)
+    
+    # Add totals row
+    totals_row = "| **TOTAL** |"
+    for module in sorted_modules:
+        total = sum(type_module_count[type_name][module] for type_name in sorted_types)
+        totals_row += f" **{total}** |"
+    markdown_table.append(totals_row)
+    
+    return "\n".join(markdown_table)
+
+def ensure_directory_exists(dir_path):
+    """
+    Creates a directory if it doesn't exist.
+    
+    Args:
+        dir_path (str): Path to the directory.
+    """
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
 def print_usage():
     """
     Prints the usage instructions for the script.
@@ -231,7 +307,7 @@ def print_usage():
     - Informs the user how to run the script with the required directory argument.
     """
     print("Usage: python generate-component-table.py <directory>")
-    print("Scans a Salesforce source directory and generates a Markdown table.")
+    print("Scans a Salesforce source directory and generates Markdown tables.")
 
 def main():
     """
@@ -240,7 +316,9 @@ def main():
     How it works:
     - Checks command-line arguments for a directory.
     - If no valid directory is provided, prints usage instructions and exits.
-    - Otherwise, calls categorize_files to gather file data, generates the Markdown table, and prints it.
+    - Otherwise, calls categorize_files to gather file data.
+    - Generates and prints the detailed component table.
+    - Creates a summary table and saves it to docs/component-table-summary.md.
     """
     if len(sys.argv) != 2:
         print_usage()
@@ -253,9 +331,27 @@ def main():
         sys.exit(1)
 
     file_data = categorize_files(base_dir)
-    markdown_table = generate_markdown_table(file_data)
-
-    print(markdown_table)
+    
+    # Generate and print the detailed component table
+    detailed_table = generate_markdown_table(file_data)
+    print(detailed_table)
+    
+    # Generate the summary table and save it to docs/component-table-summary.md
+    summary_table = generate_summary_table(file_data)
+    
+    # Create docs directory if it doesn't exist (using parent directory of base_dir)
+    parent_dir = os.path.dirname(os.path.abspath(base_dir))
+    docs_dir = os.path.join(parent_dir, "docs")
+    ensure_directory_exists(docs_dir)
+    
+    # Write the summary table to a file
+    summary_file_path = os.path.join(docs_dir, "component-table-summary.md")
+    with open(summary_file_path, 'w') as f:
+        f.write("# Component Table Summary\n\n")
+        f.write("This table summarizes the number of each component type by module.\n\n")
+        f.write(summary_table)
+    
+    print(f"\nSummary table written to {summary_file_path}")
 
 if __name__ == "__main__":
     main()
