@@ -15,7 +15,7 @@ How it works:
 - Counts the number of lines in each file.
 - Compiles the collected information into two Markdown tables:
   1. A detailed component table with columns: State, Module, Type, Name, Line Count, and Path
-  2. A summary table with component types as rows and modules as columns
+  2. A summary table with component types as rows and modules as columns, showing both line counts and file counts
 - Prints usage instructions if no directory argument is provided.
 """
 
@@ -248,31 +248,37 @@ def generate_markdown_table(file_data):
 
 def generate_summary_table(file_data):
     """
-    Generates a summary Markdown table that shows the number of each type of component
-    per module.
+    Generates a summary Markdown table that shows both line counts and file counts for each
+    component type per module.
     
     Args:
         file_data: List of tuples with file data (state, module, type, name, line_count, path)
     
     Returns:
-        str: A Markdown table with component types as rows and modules as columns.
+        str: A Markdown table with component types as rows and modules as columns,
+             showing line counts and file counts in each cell.
     """
-    # Count components by type and module
-    type_module_count = defaultdict(lambda: defaultdict(int))
+    # Structure to hold counts:
+    # {type: {module: {"files": count, "lines": count}}}
+    type_module_counts = defaultdict(lambda: defaultdict(lambda: {"files": 0, "lines": 0}))
     
     # Get all unique types and modules
     all_types = set()
     all_modules = set()
     
-    for _, module, type_name, _, _, _ in file_data:
+    for _, module, type_name, _, line_count, _ in file_data:
         if type_name:  # Skip empty types
-            type_module_count[type_name][module] += 1
+            type_module_counts[type_name][module]["files"] += 1
+            type_module_counts[type_name][module]["lines"] += line_count
             all_types.add(type_name)
             all_modules.add(module)
     
     # Sort types and modules for consistent table
     sorted_types = sorted(all_types)
     sorted_modules = sorted(all_modules)
+    
+    # Add "Summary" as a pseudo-module for totals per type
+    sorted_modules.append("Summary")
     
     # Generate the table
     markdown_table = []
@@ -286,22 +292,58 @@ def generate_summary_table(file_data):
     # Separator row
     separator = "|----------------|"
     for _ in sorted_modules:
-        separator += "---------|"
+        separator += "------------|"
     markdown_table.append(separator)
     
     # Data rows for each component type
     for type_name in sorted_types:
         row = f"| {type_name} |"
-        for module in sorted_modules:
-            count = type_module_count[type_name][module]
-            row += f" {count} |" if count > 0 else " - |"
+        
+        # Calculate summary for this type across all modules
+        type_summary = {"files": 0, "lines": 0}
+        for module in sorted_modules[:-1]:  # Exclude "Summary" module
+            type_summary["files"] += type_module_counts[type_name][module]["files"]
+            type_summary["lines"] += type_module_counts[type_name][module]["lines"]
+        
+        # Add data for each module
+        for module in sorted_modules[:-1]:  # Process all modules except the Summary column
+            file_count = type_module_counts[type_name][module]["files"]
+            line_count = type_module_counts[type_name][module]["lines"]
+            
+            if file_count > 0:
+                row += f" {line_count} / {file_count} |"
+            else:
+                row += " - |"
+        
+        # Add summary column for this type
+        row += f" **{type_summary['lines']} / {type_summary['files']}** |"
+        
         markdown_table.append(row)
     
     # Add totals row
     totals_row = "| **TOTAL** |"
-    for module in sorted_modules:
-        total = sum(type_module_count[type_name][module] for type_name in sorted_types)
-        totals_row += f" **{total}** |"
+    
+    # Calculate grand total across all types and modules
+    grand_total = {"files": 0, "lines": 0}
+    
+    # First, add totals for each module
+    for module in sorted_modules[:-1]:  # Exclude "Summary" module
+        module_total = {"files": 0, "lines": 0}
+        
+        for type_name in sorted_types:
+            module_total["files"] += type_module_counts[type_name][module]["files"]
+            module_total["lines"] += type_module_counts[type_name][module]["lines"]
+        
+        # Add to grand total
+        grand_total["files"] += module_total["files"]
+        grand_total["lines"] += module_total["lines"]
+        
+        # Add to totals row
+        totals_row += f" **{module_total['lines']} / {module_total['files']}** |"
+    
+    # Add grand total to the summary column
+    totals_row += f" **{grand_total['lines']} / {grand_total['files']}** |"
+    
     markdown_table.append(totals_row)
     
     return "\n".join(markdown_table)
@@ -376,7 +418,8 @@ def main():
     debug(f"Writing summary table to {summary_file_path}")
     with open(summary_file_path, 'w') as f:
         f.write("# Component Table Summary\n\n")
-        f.write("This table summarizes the number of each component type by module.\n\n")
+        f.write("This table summarizes the number of components by type and module.\n")
+        f.write("Each cell shows: LINE COUNT / FILE COUNT\n\n")
         f.write(summary_table)
     
     print(f"\nSummary table written to {summary_file_path}")
