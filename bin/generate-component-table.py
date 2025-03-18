@@ -7,9 +7,9 @@ How it works:
 - Uses an extended SALESFORCE_METADATA_TYPES mapping to classify files by their extension.
 - For files that match a known extension, it removes the extension from the filename for clarity.
 - For files that do not match any known extension, the type is set to an empty string.
-- Uses Git (if available) to determine if a file is "Created", "Changed", or "Unmodified".
+- Uses Git (if available) to determine if a file is "Created" or "Changed". Unmodified files have an empty state.
 - Determines the module for each file based on the first subdirectory in its path.
-- Compiles the collected information into a Markdown table with columns: State, Name, Type, Module, and Path.
+- Compiles the collected information into a Markdown table with columns: State, Module, Type, Name, and Path.
 - Prints usage instructions if no directory argument is provided.
 """
 
@@ -89,8 +89,8 @@ def detect_file_state(file_path, base_dir):
     - Calls 'git status --porcelain' on the file (using its relative path).
     - If the status code starts with "A", returns "Created".
     - If the status code starts with "M", returns "Changed".
-    - Otherwise, defaults to "Unmodified".
-    - If Git is not available or an error occurs, it returns "Unmodified".
+    - Otherwise, returns an empty string for unmodified files.
+    - If Git is not available or an error occurs, it returns an empty string.
     """
     try:
         rel_path = os.path.relpath(file_path, base_dir)
@@ -103,9 +103,9 @@ def detect_file_state(file_path, base_dir):
         elif status_code.startswith("M"):
             return "Changed"
     except Exception:
-        pass  # If Git isn't available or an error occurs, assume "Unmodified"
+        pass  # If Git isn't available or an error occurs, assume empty state
 
-    return "Unmodified"
+    return ""  # Empty state for unmodified files
 
 def determine_module(relative_path):
     """
@@ -133,7 +133,7 @@ def categorize_files(base_dir):
     - If no match is found, includes the file with an empty type.
     - Determines the file state using the detect_file_state function.
     - Determines the module using the determine_module function.
-    - Collects a tuple (state, name, type, module, relative path) for each file.
+    - Collects a tuple (state, module, type, name, relative path) for each file.
     """
     file_data = []
 
@@ -158,7 +158,9 @@ def categorize_files(base_dir):
             state = detect_file_state(file_path, base_dir)
             relative_path = os.path.relpath(file_path, base_dir)
             module = determine_module(relative_path)
-            file_data.append((state, stripped_name, metadata_type, module, relative_path))
+            
+            # Reordered tuple elements: (state, module, type, name, path)
+            file_data.append((state, module, metadata_type, stripped_name, relative_path))
 
     return file_data
 
@@ -168,12 +170,12 @@ def generate_markdown_table(file_data):
     
     How it works:
     - Creates the header row and a separator row.
-    - Iterates over each file entry and creates a table row with columns: State, Name, Type, Module, and Path.
+    - Iterates over each file entry and creates a table row with columns: State, Module, Type, Name, and Path.
     - Joins all rows into a single string representing the Markdown table.
     """
     markdown_table = []
-    markdown_table.append("| State       | Name         | Type        | Module       | Path                     |")
-    markdown_table.append("|-------------|--------------|-------------|-------------|--------------------------|")
+    markdown_table.append("| State       | Module       | Type        | Name         | Path                     |")
+    markdown_table.append("|-------------|-------------|-------------|--------------|--------------------------|")
 
     for row in file_data:
         markdown_table.append(f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]} |")
