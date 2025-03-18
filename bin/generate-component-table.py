@@ -325,6 +325,7 @@ def print_usage():
     """
     print("Usage: python generate-component-table.py <directory>")
     print("Scans a Salesforce source directory and generates Markdown tables.")
+    print("Debug: python generate-component-table.py --debug <directory>")
 
 def main():
     """
