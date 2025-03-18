@@ -23,7 +23,17 @@ import os
 import re
 import sys
 import subprocess
+import datetime
 from collections import defaultdict
+
+# Global flag for debug mode
+DEBUG = False
+
+def debug(msg):
+    """Print debug message if DEBUG mode is enabled"""
+    if DEBUG:
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")
+        print(f"[DEBUG {timestamp}] {msg}", file=sys.stderr)
 
 # Extended mapping of file extensions to Salesforce metadata types.
 # This dictionary maps common Salesforce file extensions to their corresponding metadata types.
@@ -177,11 +187,18 @@ def categorize_files(base_dir):
     - Collects a tuple (state, module, type, name, line_count, path) for each file.
     """
     file_data = []
+    file_count = 0
 
     for root, _, files in os.walk(base_dir):
+        debug(f"Scanning directory: {root}")
         for file in files:
+            file_count += 1
+            if file_count % 100 == 0:
+                debug(f"Processed {file_count} files")
+            
             file_path = os.path.join(root, file)
             relative_path = os.path.relpath(file_path, base_dir)
+            debug(f"Processing file: {relative_path}")
             
             metadata_type = ""
             stripped_name = file  # Default: use the full filename
@@ -320,6 +337,13 @@ def main():
     - Generates and prints the detailed component table.
     - Creates a summary table and saves it to docs/component-table-summary.md.
     """
+    global DEBUG
+    # Check for --debug flag
+    if "--debug" in sys.argv:
+        DEBUG = True
+        sys.argv.remove("--debug")
+        debug("Debug mode enabled")
+    
     if len(sys.argv) != 2:
         print_usage()
         sys.exit(1)
@@ -330,7 +354,9 @@ def main():
         print(f"Error: Directory '{base_dir}' not found.")
         sys.exit(1)
 
+    debug(f"Starting file scan in {base_dir}")
     file_data = categorize_files(base_dir)
+    debug(f"Found {len(file_data)} files")
     
     # Generate and print the detailed component table
     detailed_table = generate_markdown_table(file_data)
@@ -346,6 +372,7 @@ def main():
     
     # Write the summary table to a file
     summary_file_path = os.path.join(docs_dir, "component-table-summary.md")
+    debug(f"Writing summary table to {summary_file_path}")
     with open(summary_file_path, 'w') as f:
         f.write("# Component Table Summary\n\n")
         f.write("This table summarizes the number of each component type by module.\n\n")
