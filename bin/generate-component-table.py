@@ -142,17 +142,26 @@ def determine_module(relative_path):
 def get_file_extension(filename):
     """
     Extracts the file extension from a filename.
-    If the file has multiple extensions, returns all extensions after the first dot.
+    If the file has multiple extensions, returns at most the last two components.
     
     Args:
         filename (str): The name of the file.
     
     Returns:
         str: The file extension(s) or an empty string if none found.
+        For example, for file '111.222.abc.xyz', returns 'abc.xyz'.
     """
-    parts = filename.split('.', 1)
+    # Split the filename by dots
+    parts = filename.split('.')
+    
+    # If the file has a name and at least one extension
     if len(parts) > 1:
-        return parts[1]  # Return everything after the first dot
+        # If multiple extensions exist, take at most the last two
+        if len(parts) > 2:
+            return '.'.join(parts[-2:])  # Return the last two components
+        else:
+            return parts[-1]  # Return just the last component
+    
     return ""  # No extension found
 
 def count_lines(file_path):
