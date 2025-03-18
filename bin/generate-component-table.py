@@ -8,7 +8,8 @@ How it works:
 - For files that match a known extension, it removes the extension from the filename for clarity.
 - For files that do not match any known extension, the type is set to an empty string.
 - Uses Git (if available) to determine if a file is "Created", "Changed", or "Unmodified".
-- Compiles the collected information into a Markdown table with columns: State, Name, Type, and Path.
+- Determines the module for each file based on the first subdirectory in its path.
+- Compiles the collected information into a Markdown table with columns: State, Name, Type, Module, and Path.
 - Prints usage instructions if no directory argument is provided.
 """
 
@@ -106,6 +107,21 @@ def detect_file_state(file_path, base_dir):
 
     return "Unmodified"
 
+def determine_module(relative_path):
+    """
+    Determines the module name based on the first directory in the relative path.
+    
+    Args:
+        relative_path (str): The file path relative to the base directory.
+    
+    Returns:
+        str: The module name (first directory in the path) or "-" if no directory is found.
+    """
+    parts = relative_path.split(os.sep)
+    if len(parts) > 0:
+        return parts[0]
+    return "-"
+
 def categorize_files(base_dir):
     """
     Recursively scans the directory and categorizes files.
@@ -116,7 +132,8 @@ def categorize_files(base_dir):
     - If a match is found, assigns the corresponding type and removes the extension from the name.
     - If no match is found, includes the file with an empty type.
     - Determines the file state using the detect_file_state function.
-    - Collects a tuple (state, name, type, relative path) for each file.
+    - Determines the module using the determine_module function.
+    - Collects a tuple (state, name, type, module, relative path) for each file.
     """
     file_data = []
 
@@ -140,7 +157,8 @@ def categorize_files(base_dir):
             
             state = detect_file_state(file_path, base_dir)
             relative_path = os.path.relpath(file_path, base_dir)
-            file_data.append((state, stripped_name, metadata_type, relative_path))
+            module = determine_module(relative_path)
+            file_data.append((state, stripped_name, metadata_type, module, relative_path))
 
     return file_data
 
@@ -150,15 +168,15 @@ def generate_markdown_table(file_data):
     
     How it works:
     - Creates the header row and a separator row.
-    - Iterates over each file entry and creates a table row with columns: State, Name, Type, and Path.
+    - Iterates over each file entry and creates a table row with columns: State, Name, Type, Module, and Path.
     - Joins all rows into a single string representing the Markdown table.
     """
     markdown_table = []
-    markdown_table.append("| State       | Name         | Type        | Path                     |")
-    markdown_table.append("|-------------|--------------|-------------|--------------------------|")
+    markdown_table.append("| State       | Name         | Type        | Module       | Path                     |")
+    markdown_table.append("|-------------|--------------|-------------|-------------|--------------------------|")
 
     for row in file_data:
-        markdown_table.append(f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} |")
+        markdown_table.append(f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]} |")
 
     return "\n".join(markdown_table)
 
