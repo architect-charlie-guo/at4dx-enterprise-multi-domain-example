@@ -1,15 +1,16 @@
 """
 This script recursively scans a Salesforce source directory and compiles a Markdown table.
-It includes all files found—even if they don't match any known Salesforce metadata type—by leaving the type field empty.
+It includes all files found, classifying them by file extension if no Salesforce type is known.
 
 How it works:
 - Recursively scans all files in the specified directory (including subdirectories).
 - Uses an extended SALESFORCE_METADATA_TYPES mapping to classify files by their extension.
 - For files that match a known extension, it removes the extension from the filename for clarity.
-- For files that do not match any known extension, the type is set to an empty string.
+- For files that don't match a known extension, uses the file extension as type.
 - Uses Git (if available) to determine if a file is "Created" or "Changed". Unmodified files have an empty state.
 - Determines the module for each file based on the first subdirectory in its path.
-- Compiles the collected information into a Markdown table with columns: State, Module, Type, Name, and Path.
+- Counts the number of lines in each file.
+- Compiles the collected information into a Markdown table with columns: State, Module, Type, Name, Line Count, and Path.
 - Prints usage instructions if no directory argument is provided.
 """
 
@@ -122,6 +123,39 @@ def determine_module(relative_path):
         return parts[0]
     return "-"
 
+def get_file_extension(filename):
+    """
+    Extracts the file extension from a filename.
+    If the file has multiple extensions, returns all extensions after the first dot.
+    
+    Args:
+        filename (str): The name of the file.
+    
+    Returns:
+        str: The file extension(s) or an empty string if none found.
+    """
+    parts = filename.split('.', 1)
+    if len(parts) > 1:
+        return parts[1]  # Return everything after the first dot
+    return ""  # No extension found
+
+def count_lines(file_path):
+    """
+    Counts the number of lines in a file.
+    
+    Args:
+        file_path (str): Path to the file.
+    
+    Returns:
+        int: Number of lines in the file, or 0 if file can't be read.
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            return sum(1 for _ in f)
+    except Exception:
+        # Return 0 for files that can't be read as text
+        return 0
+
 def categorize_files(base_dir):
     """
     Recursively scans the directory and categorizes files.
@@ -130,37 +164,43 @@ def categorize_files(base_dir):
     - Uses os.walk to traverse all subdirectories.
     - For each file, checks if its name ends with any known Salesforce metadata extension.
     - If a match is found, assigns the corresponding type and removes the extension from the name.
-    - If no match is found, includes the file with an empty type.
+    - If no match is found, uses the file extension as the type.
     - Determines the file state using the detect_file_state function.
     - Determines the module using the determine_module function.
-    - Collects a tuple (state, module, type, name, relative path) for each file.
+    - Counts the number of lines in each file.
+    - Collects a tuple (state, module, type, name, line_count, path) for each file.
     """
     file_data = []
 
     for root, _, files in os.walk(base_dir):
         for file in files:
             file_path = os.path.join(root, file)
-
+            relative_path = os.path.relpath(file_path, base_dir)
+            
             metadata_type = ""
             stripped_name = file  # Default: use the full filename
             matched_ext = None
 
+            # Try to match with known Salesforce metadata types
             for ext, sf_type in SALESFORCE_METADATA_TYPES.items():
                 if file.endswith(ext):
                     metadata_type = sf_type
                     matched_ext = ext
                     break
             
-            # If a known extension is found, remove it from the file name for clarity.
+            # If a known extension is found, remove it from the file name for clarity
             if matched_ext:
                 stripped_name = file[:-len(matched_ext)]
+            # If no known type is found, use the file extension as the type
+            elif not metadata_type:
+                metadata_type = get_file_extension(file)
             
             state = detect_file_state(file_path, base_dir)
-            relative_path = os.path.relpath(file_path, base_dir)
             module = determine_module(relative_path)
+            line_count = count_lines(file_path)
             
-            # Reordered tuple elements: (state, module, type, name, path)
-            file_data.append((state, module, metadata_type, stripped_name, relative_path))
+            # Reordered tuple elements: (state, module, type, name, line_count, path)
+            file_data.append((state, module, metadata_type, stripped_name, line_count, relative_path))
 
     return file_data
 
@@ -170,15 +210,16 @@ def generate_markdown_table(file_data):
     
     How it works:
     - Creates the header row and a separator row.
-    - Iterates over each file entry and creates a table row with columns: State, Module, Type, Name, and Path.
+    - Iterates over each file entry and creates a table row with columns: 
+      State, Module, Type, Name, Line Count, and Path.
     - Joins all rows into a single string representing the Markdown table.
     """
     markdown_table = []
-    markdown_table.append("| State       | Module       | Type        | Name         | Path                     |")
-    markdown_table.append("|-------------|-------------|-------------|--------------|--------------------------|")
+    markdown_table.append("| State       | Module       | Type        | Name         | Line Count | Path                     |")
+    markdown_table.append("|-------------|-------------|-------------|--------------|------------|--------------------------|")
 
     for row in file_data:
-        markdown_table.append(f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]} |")
+        markdown_table.append(f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]} | {row[5]} |")
 
     return "\n".join(markdown_table)
 
